@@ -3,22 +3,31 @@ package models
 import (
 	"time"
 	"bank-api-demo/utils"
-	"fmt"
+	"sync"
+	"errors"
 )
 
 type Account struct {
 	ID        string    `json:"id"`
 	Balance   float64   `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
+	mu        sync.Mutex
 }
 
-var accountList = make(map[string]Account)
+var accountList = make(map[string]*Account)
 
-func isPresent(accId string) bool {
-	if _, ok := accountList[accId]; !ok {
-		return false
+const (
+	accountNotPreset = "account not present"
+	notEnoughMoney   = "not enough money"
+	sameAccounts     = "you cannot transfer money between the same accounts"
+)
+
+func isPresent(accId string) (*Account, bool) {
+	if acc, ok := accountList[accId]; !ok {
+		return nil, false
+	} else {
+		return acc, true
 	}
-	return true
 }
 
 func CreateAccount() (*Account, error) {
@@ -31,40 +40,87 @@ func CreateAccount() (*Account, error) {
 		CreatedAt: timestamp,
 	}
 
-	accountList[accId] = acc
+	accountList[accId] = &acc
 
 	return &acc, nil
 }
 
 func DeleteAccount(accId string) (*Account, error) {
 
-	if !isPresent(accId) {
-		return nil,nil
+	acc, ok := isPresent(accId)
+	if !ok {
+		return nil, errors.New(accountNotPreset)
 	}
 
-	delete(accountList, accId)
-	return nil,nil
+	return acc, nil
 }
 
 func WithdrawAccount(accId string, sum float64) (*Account, error) {
 
-	fmt.Println(accId)
-	fmt.Println(sum)
+	acc, ok := isPresent(accId)
+	if !ok {
+		return nil, errors.New(accountNotPreset)
+	}
 
-	return nil,nil
+	if acc.Balance < sum {
+		return nil, errors.New(notEnoughMoney)
+	}
+
+	acc.mu.Lock()
+	defer acc.mu.Unlock()
+
+	acc.Balance -= sum
+
+	return acc, nil
 }
 
 func DepositAccount(accId string, sum float64) (*Account, error) {
-	fmt.Println(accId)
-	fmt.Println(sum)
 
-	return nil,nil
+	acc, ok := isPresent(accId)
+	if !ok {
+		return nil, errors.New(accountNotPreset)
+	}
+
+	acc.mu.Lock()
+	defer acc.mu.Unlock()
+	acc.Balance += sum
+
+	return acc, nil
 }
 
-func TransferAccount(accIdFrom string, accIdTo string, sum float64) (*Account, error) {
-	fmt.Println(accIdFrom)
-	fmt.Println(accIdTo)
-	fmt.Println(sum)
+func TransferAccount(accIdFrom string, accIdTo string, sum float64) (interface{}, error) {
 
-	return nil,nil
+	if accIdFrom == accIdTo {
+		return nil, errors.New(sameAccounts)
+	}
+
+	accFrom, ok := isPresent(accIdFrom)
+	if !ok {
+		return nil, errors.New(accountNotPreset)
+	}
+
+	accTo, ok := isPresent(accIdTo)
+	if !ok {
+		return nil, errors.New(accountNotPreset)
+	}
+
+	if accFrom.Balance < sum {
+		return nil, errors.New(notEnoughMoney)
+	}
+
+	accFrom.mu.Lock()
+	accTo.mu.Lock()
+	defer func() {
+		accFrom.mu.Unlock()
+		accTo.mu.Unlock()
+	}()
+
+	accFrom.Balance -= sum
+	accTo.Balance += sum
+
+	return &accountList, nil
+}
+
+func GetAccounts() interface{} {
+	return &accountList
 }

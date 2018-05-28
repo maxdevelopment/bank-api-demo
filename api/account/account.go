@@ -10,13 +10,17 @@ import (
 
 func HandlerCreate(w http.ResponseWriter, r *http.Request) {
 	acc, _ := models.CreateAccount()
-	json.NewEncoder(w).Encode(&acc)
+	respondWithJSON(w, http.StatusOK, acc)
 }
 
 func HandlerClose(w http.ResponseWriter, r *http.Request) {
 	accId := mux.Vars(r)["id"]
-	acc, _ := models.DeleteAccount(accId)
-	json.NewEncoder(w).Encode(&acc)
+	acc, err := models.DeleteAccount(accId)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusOK, acc)
 }
 
 func HandlerWithdraw(w http.ResponseWriter, r *http.Request) {
@@ -24,11 +28,16 @@ func HandlerWithdraw(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	sum, err := strconv.ParseFloat(r.FormValue("sum"), 64)
 	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	acc, _ := models.WithdrawAccount(id, sum)
-	json.NewEncoder(w).Encode(&acc)
+	acc, err := models.WithdrawAccount(id, sum)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusOK, acc)
 
 }
 
@@ -37,11 +46,16 @@ func HandlerDeposit(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	sum, err := strconv.ParseFloat(r.FormValue("sum"), 64)
 	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	acc, _ := models.DepositAccount(id, sum)
-	json.NewEncoder(w).Encode(&acc)
+	acc, err := models.DepositAccount(id, sum)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusOK, acc)
 }
 
 func HandlerTransfer(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +64,19 @@ func HandlerTransfer(w http.ResponseWriter, r *http.Request) {
 	idTo := r.FormValue("idTo")
 	sum, err := strconv.ParseFloat(r.FormValue("sum"), 64)
 	if err != nil {
-		return
+		respondWithError(w, http.StatusBadRequest, err.Error())
 	}
 
-	acc, _ := models.TransferAccount(idFrom, idTo, sum)
-	json.NewEncoder(w).Encode(&acc)
+	accounts, err := models.TransferAccount(idFrom, idTo, sum)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondWithJSON(w, http.StatusOK, &accounts)
+}
+
+func HandlerAccounts(w http.ResponseWriter, r *http.Request) {
+	respondWithJSON(w, http.StatusOK, models.GetAccounts())
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

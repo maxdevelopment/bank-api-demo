@@ -15,6 +15,7 @@ func NewRoutes() *mux.Router {
 
 	api := m.PathPrefix("/api/").Subrouter()
 
+	api.HandleFunc("/accounts", account.HandlerAccounts).Methods("GET")
 	api.HandleFunc("/open-account", account.HandlerCreate).Methods("GET")
 	api.HandleFunc("/close-account/{id}", account.HandlerClose).Methods("DELETE")
 
