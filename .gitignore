@@ -13,3 +13,4 @@
 .idea
 vendor
 !/vendor/vendor.json
+web/node_modules

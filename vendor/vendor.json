@@ -21,6 +21,18 @@
 			"path": "github.com/gorilla/mux",
 			"revision": "e0b5abaaae35242fa74372f26c24107711702a4e",
 			"revisionTime": "2018-05-26T22:17:21Z"
+		},
+		{
+			"checksumSHA1": "XNmWIjMqYUL0qWEfRUi3X5rfYhw=",
+			"path": "github.com/rs/cors",
+			"revision": "694cf2ad010fcf91ee35161f5bfdad8f42ed1b9a",
+			"revisionTime": "2018-05-24T07:14:09Z"
+		},
+		{
+			"checksumSHA1": "wWhBVw5JhTUIbBstf20hucDfY/o=",
+			"path": "github.com/urfave/negroni",
+			"revision": "22c5532ea862c34fdad414e90f8cc00b4f6f4cab",
+			"revisionTime": "2018-01-30T04:45:49Z"
 		}
 	],
 	"rootPath": "bank-api-demo"
