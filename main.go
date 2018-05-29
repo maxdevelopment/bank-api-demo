@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 	"log"
-	"bank-api-demo/routes"
+	"github.com/maxdevelopment/bank-api-demo/routes"
 )
 
 func determineListenAddress() (string, error) {

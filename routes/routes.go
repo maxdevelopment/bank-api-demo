@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"github.com/gorilla/mux"
 	"log"
-	"bank-api-demo/api/account"
+	"github.com/maxdevelopment/bank-api-demo/api/account"
 )
 
 func NewRoutes() *mux.Router {

@@ -2,7 +2,7 @@ package models
 
 import (
 	"time"
-	"bank-api-demo/utils"
+	"github.com/maxdevelopment/bank-api-demo/utils"
 	"sync"
 	"errors"
 )

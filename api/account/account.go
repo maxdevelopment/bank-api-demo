@@ -2,7 +2,7 @@ package account
 
 import (
 	"net/http"
-	"bank-api-demo/models"
+	"github.com/maxdevelopment/bank-api-demo/models"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"strconv"
