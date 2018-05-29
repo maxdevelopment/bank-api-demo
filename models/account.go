@@ -16,12 +16,12 @@ type Account struct {
 
 type AccountList struct {
 	list map[string]*Account
-	sync.RWMutex
+	sync.Mutex
 }
 
 type Transfer struct {
-	from *Account
-	to   *Account
+	From *Account `json:"from"`
+	To   *Account `json:"to"`
 }
 
 var al = AccountList{
@@ -36,13 +36,15 @@ func (al *AccountList) getAccount(accId string) (*Account, bool) {
 	}
 }
 
-func (al *AccountList) setAccount(account *Account) { //LOCK
-	al.RLock()
-	defer al.RUnlock()
+func (al *AccountList) setAccount(account *Account) {
+	al.Lock()
+	defer al.Unlock()
 	al.list[account.ID] = account
 }
 
 func (al *AccountList) deleteAccount(accId string) {
+	al.Lock()
+	defer al.Unlock()
 	delete(al.list, accId)
 }
 
@@ -141,8 +143,8 @@ func TransferAccount(accIdFrom string, accIdTo string, sum float64) (*Transfer, 
 	accTo.Balance += sum
 
 	ta := Transfer{
-		from: accFrom,
-		to:   accTo,
+		From: accFrom,
+		To:   accTo,
 	}
 
 	return &ta, nil
