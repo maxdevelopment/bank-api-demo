@@ -51,6 +51,7 @@ func DeleteAccount(accId string) (*Account, error) {
 	if !ok {
 		return nil, errors.New(accountNotPreset)
 	}
+	delete(accountList, accId)
 
 	return acc, nil
 }
