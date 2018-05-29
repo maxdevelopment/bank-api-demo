@@ -7,6 +7,7 @@ import (
 	"errors"
 )
 
+//Balance returns value in cents
 type Account struct {
 	ID        string    `json:"id"`
 	Balance   int64     `json:"balance"`
