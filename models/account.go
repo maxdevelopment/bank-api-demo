@@ -9,9 +9,28 @@ import (
 
 type Account struct {
 	ID        string    `json:"id"`
-	Balance   float64   `json:"balance"`
+	Balance   int64     `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
 	mu        sync.Mutex
+}
+
+func (a *Account) increase(sum float64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.Balance += int64(sum * 100)
+}
+
+func (a *Account) decrease(sum float64) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	s := int64(sum * 100)
+	if a.Balance < s {
+		return ErrNotEnoughMoney
+	}
+	a.Balance -= s
+	return nil
 }
 
 type AccountList struct {
@@ -86,14 +105,10 @@ func WithdrawAccount(accId string, sum float64) (*Account, error) {
 		return nil, ErrAccountNotPreset
 	}
 
-	acc.mu.Lock()
-	defer acc.mu.Unlock()
-
-	if acc.Balance < sum {
-		return nil, ErrNotEnoughMoney
+	err := acc.decrease(sum)
+	if err != nil {
+		return nil, err
 	}
-
-	acc.Balance -= sum
 
 	return acc, nil
 }
@@ -105,9 +120,7 @@ func DepositAccount(accId string, sum float64) (*Account, error) {
 		return nil, ErrAccountNotPreset
 	}
 
-	acc.mu.Lock()
-	defer acc.mu.Unlock()
-	acc.Balance += sum
+	acc.increase(sum)
 
 	return acc, nil
 }
@@ -128,19 +141,12 @@ func TransferAccount(accIdFrom string, accIdTo string, sum float64) (*Transfer, 
 		return nil, ErrAccountNotPreset
 	}
 
-	accFrom.mu.Lock()
-	accTo.mu.Lock()
-	defer func() {
-		accFrom.mu.Unlock()
-		accTo.mu.Unlock()
-	}()
-
-	if accFrom.Balance < sum {
-		return nil, ErrNotEnoughMoney
+	err := accFrom.decrease(sum)
+	if err != nil {
+		return nil, err
 	}
 
-	accFrom.Balance -= sum
-	accTo.Balance += sum
+	accTo.increase(sum)
 
 	ta := Transfer{
 		From: accFrom,
