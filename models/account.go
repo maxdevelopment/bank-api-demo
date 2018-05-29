@@ -49,6 +49,8 @@ var al = AccountList{
 }
 
 func (al *AccountList) getAccount(accId string) (*Account, bool) {
+	al.Lock()
+	defer al.Unlock()
 	if acc, ok := al.list[accId]; !ok {
 		return nil, false
 	} else {
