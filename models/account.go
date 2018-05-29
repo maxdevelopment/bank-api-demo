@@ -15,7 +15,7 @@ type Account struct {
 }
 
 type AccountList struct {
-	list map[string]Account
+	list map[string]*Account
 	sync.RWMutex
 }
 
@@ -25,21 +25,21 @@ type Transfer struct {
 }
 
 var al = AccountList{
-	list: make(map[string]Account),
+	list: make(map[string]*Account),
 }
 
 func (al *AccountList) getAccount(accId string) (*Account, bool) {
 	if acc, ok := al.list[accId]; !ok {
 		return nil, false
 	} else {
-		return &acc, true
+		return acc, true
 	}
 }
 
-func (al *AccountList) setAccount(account *Account) {
+func (al *AccountList) setAccount(account *Account) { //LOCK
 	al.RLock()
 	defer al.RUnlock()
-	al.list[account.ID] = *account
+	al.list[account.ID] = account
 }
 
 func (al *AccountList) deleteAccount(accId string) {
