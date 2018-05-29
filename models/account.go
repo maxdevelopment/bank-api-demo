@@ -16,10 +16,11 @@ type Account struct {
 
 var accountList = make(map[string]*Account)
 
-const (
-	accountNotPreset = "account not present"
-	notEnoughMoney   = "not enough money"
-	sameAccounts     = "you cannot transfer money between the same accounts"
+
+var (
+	ErrAccountNotPreset = errors.New("account not present")
+	ErrNotEnoughMoney = errors.New("not enough money")
+	ErrSameAccounts = errors.New("you cannot transfer money between the same accounts")
 )
 
 func isPresent(accId string) (*Account, bool) {
@@ -49,7 +50,7 @@ func DeleteAccount(accId string) (*Account, error) {
 
 	acc, ok := isPresent(accId)
 	if !ok {
-		return nil, errors.New(accountNotPreset)
+		return nil, ErrAccountNotPreset
 	}
 	delete(accountList, accId)
 
@@ -60,15 +61,15 @@ func WithdrawAccount(accId string, sum float64) (*Account, error) {
 
 	acc, ok := isPresent(accId)
 	if !ok {
-		return nil, errors.New(accountNotPreset)
-	}
-
-	if acc.Balance < sum {
-		return nil, errors.New(notEnoughMoney)
+		return nil, ErrAccountNotPreset
 	}
 
 	acc.mu.Lock()
 	defer acc.mu.Unlock()
+
+	if acc.Balance < sum {
+		return nil, ErrNotEnoughMoney
+	}
 
 	acc.Balance -= sum
 
@@ -79,7 +80,7 @@ func DepositAccount(accId string, sum float64) (*Account, error) {
 
 	acc, ok := isPresent(accId)
 	if !ok {
-		return nil, errors.New(accountNotPreset)
+		return nil, ErrAccountNotPreset
 	}
 
 	acc.mu.Lock()
@@ -92,21 +93,17 @@ func DepositAccount(accId string, sum float64) (*Account, error) {
 func TransferAccount(accIdFrom string, accIdTo string, sum float64) (interface{}, error) {
 
 	if accIdFrom == accIdTo {
-		return nil, errors.New(sameAccounts)
+		return nil, ErrSameAccounts
 	}
 
 	accFrom, ok := isPresent(accIdFrom)
 	if !ok {
-		return nil, errors.New(accountNotPreset)
+		return nil, ErrAccountNotPreset
 	}
 
 	accTo, ok := isPresent(accIdTo)
 	if !ok {
-		return nil, errors.New(accountNotPreset)
-	}
-
-	if accFrom.Balance < sum {
-		return nil, errors.New(notEnoughMoney)
+		return nil, ErrAccountNotPreset
 	}
 
 	accFrom.mu.Lock()
@@ -115,6 +112,10 @@ func TransferAccount(accIdFrom string, accIdTo string, sum float64) (interface{}
 		accFrom.mu.Unlock()
 		accTo.mu.Unlock()
 	}()
+
+	if accFrom.Balance < sum {
+		return nil, ErrNotEnoughMoney
+	}
 
 	accFrom.Balance -= sum
 	accTo.Balance += sum
