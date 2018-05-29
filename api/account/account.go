@@ -75,10 +75,6 @@ func HandlerTransfer(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, &accounts)
 }
 
-func HandlerAccounts(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, http.StatusOK, models.GetAccounts())
-}
-
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, map[string]string{"error": message})
 }

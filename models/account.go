@@ -14,22 +14,43 @@ type Account struct {
 	mu        sync.Mutex
 }
 
-var accountList = make(map[string]*Account)
+type AccountList struct {
+	list map[string]Account
+	sync.RWMutex
+}
 
+type Transfer struct {
+	from *Account
+	to   *Account
+}
+
+var al = AccountList{
+	list: make(map[string]Account),
+}
+
+func (al *AccountList) getAccount(accId string) (*Account, bool) {
+	if acc, ok := al.list[accId]; !ok {
+		return nil, false
+	} else {
+		return &acc, true
+	}
+}
+
+func (al *AccountList) setAccount(account *Account) {
+	al.RLock()
+	defer al.RUnlock()
+	al.list[account.ID] = *account
+}
+
+func (al *AccountList) deleteAccount(accId string) {
+	delete(al.list, accId)
+}
 
 var (
 	ErrAccountNotPreset = errors.New("account not present")
-	ErrNotEnoughMoney = errors.New("not enough money")
-	ErrSameAccounts = errors.New("you cannot transfer money between the same accounts")
+	ErrNotEnoughMoney   = errors.New("not enough money")
+	ErrSameAccounts     = errors.New("you cannot transfer money between the same accounts")
 )
-
-func isPresent(accId string) (*Account, bool) {
-	if acc, ok := accountList[accId]; !ok {
-		return nil, false
-	} else {
-		return acc, true
-	}
-}
 
 func CreateAccount() (*Account, error) {
 	accId := utils.RandStringBytes(8)
@@ -40,26 +61,25 @@ func CreateAccount() (*Account, error) {
 		Balance:   0,
 		CreatedAt: timestamp,
 	}
-
-	accountList[accId] = &acc
+	al.setAccount(&acc)
 
 	return &acc, nil
 }
 
 func DeleteAccount(accId string) (*Account, error) {
 
-	acc, ok := isPresent(accId)
+	acc, ok := al.getAccount(accId)
 	if !ok {
 		return nil, ErrAccountNotPreset
 	}
-	delete(accountList, accId)
+	al.deleteAccount(accId)
 
 	return acc, nil
 }
 
 func WithdrawAccount(accId string, sum float64) (*Account, error) {
 
-	acc, ok := isPresent(accId)
+	acc, ok := al.getAccount(accId)
 	if !ok {
 		return nil, ErrAccountNotPreset
 	}
@@ -78,7 +98,7 @@ func WithdrawAccount(accId string, sum float64) (*Account, error) {
 
 func DepositAccount(accId string, sum float64) (*Account, error) {
 
-	acc, ok := isPresent(accId)
+	acc, ok := al.getAccount(accId)
 	if !ok {
 		return nil, ErrAccountNotPreset
 	}
@@ -90,18 +110,18 @@ func DepositAccount(accId string, sum float64) (*Account, error) {
 	return acc, nil
 }
 
-func TransferAccount(accIdFrom string, accIdTo string, sum float64) (interface{}, error) {
+func TransferAccount(accIdFrom string, accIdTo string, sum float64) (*Transfer, error) {
 
 	if accIdFrom == accIdTo {
 		return nil, ErrSameAccounts
 	}
 
-	accFrom, ok := isPresent(accIdFrom)
+	accFrom, ok := al.getAccount(accIdFrom)
 	if !ok {
 		return nil, ErrAccountNotPreset
 	}
 
-	accTo, ok := isPresent(accIdTo)
+	accTo, ok := al.getAccount(accIdTo)
 	if !ok {
 		return nil, ErrAccountNotPreset
 	}
@@ -120,9 +140,10 @@ func TransferAccount(accIdFrom string, accIdTo string, sum float64) (interface{}
 	accFrom.Balance -= sum
 	accTo.Balance += sum
 
-	return &accountList, nil
-}
+	ta := Transfer{
+		from: accFrom,
+		to:   accTo,
+	}
 
-func GetAccounts() interface{} {
-	return &accountList
+	return &ta, nil
 }
